@@ -37,14 +37,31 @@ jobs:
           distribution: temurin
           java-version: "17"
 
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+        with:
+          api-level: 34
+          build-tools: 34.0.0
+          components: platform-tools
+
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v3
         with:
           gradle-version: "8.7"
 
+      - name: Install Gradle 8.7
+        run: |
+          curl -sLo gradle.zip https://services.gradle.org/distributions/gradle-8.7-bin.zip
+          unzip -q gradle.zip -d $HOME
+          echo "GRADLE_HOME=$HOME/gradle-8.7" >> $GITHUB_ENV
+          echo "$HOME/gradle-8.7/bin" >> $GITHUB_PATH
+          gradle -v
+
       - name: Build Debug APK
         working-directory: hc06_android
-        run: gradle :app:assembleDebug
+        run: |
+          echo "sdk.dir=$ANDROID_SDK_ROOT" > local.properties
+          gradle :app:assembleDebug
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
