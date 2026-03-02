@@ -29,7 +29,13 @@ jobs:
               mv "$DIR_WITH_SETTINGS" hc06_android
             fi
           fi
+          echo "== Repo root =="
           ls -la
+          echo "== hc06_android tree =="
+          ls -la hc06_android || true
+          ls -la hc06_android/app || true
+          test -f hc06_android/settings.gradle || (echo "settings.gradle not found, build will fail" && exit 1)
+          test -f hc06_android/app/build.gradle || (echo "app/build.gradle not found, build will fail" && exit 1)
 
       - name: Set up JDK
         uses: actions/setup-java@v4
@@ -43,6 +49,8 @@ jobs:
           api-level: 34
           build-tools: 34.0.0
           components: platform-tools
+      - name: Accept Android SDK licenses
+        run: yes | sdkmanager --licenses
 
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v3
@@ -61,7 +69,7 @@ jobs:
         working-directory: hc06_android
         run: |
           echo "sdk.dir=$ANDROID_SDK_ROOT" > local.properties
-          gradle :app:assembleDebug
+          gradle :app:assembleDebug --stacktrace --no-daemon
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
