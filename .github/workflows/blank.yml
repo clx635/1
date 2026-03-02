@@ -1,0 +1,53 @@
+name: Build APK
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Prepare project from zip if needed
+        run: |
+          if [ ! -d "hc06_android" ]; then
+            if [ -f "hc06_android.zip" ]; then
+              unzip -q hc06_android.zip
+            else
+              ZIP_FILE=$(ls *.zip | head -n 1 || true)
+              if [ -n "$ZIP_FILE" ]; then
+                unzip -q "$ZIP_FILE"
+              fi
+            fi
+          fi
+          if [ ! -d "hc06_android" ]; then
+            DIR_WITH_SETTINGS=$(find . -maxdepth 2 -type f -name "settings.gradle" -printf "%h\n" | head -n 1 || true)
+            if [ -n "$DIR_WITH_SETTINGS" ]; then
+              mv "$DIR_WITH_SETTINGS" hc06_android
+            fi
+          fi
+          ls -la
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v3
+        with:
+          gradle-version: "8.7"
+
+      - name: Build Debug APK
+        working-directory: hc06_android
+        run: gradle :app:assembleDebug
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: hc06-terminal-debug-apk
+          path: hc06_android/app/build/outputs/apk/debug/app-debug.apk
